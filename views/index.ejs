@@ -1,23 +1,543 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Send Email</title>
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Email Sender</title>
+  <!-- Google Fonts + Canvas Confetti -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 20% 30%, #0a0c1a, #03050b);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* animated stars / particles */
+    .star-field {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .star {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      animation: twinkle 4s infinite alternate;
+    }
+    @keyframes twinkle {
+      0% { opacity: 0.2; transform: scale(1);}
+      100% { opacity: 1; transform: scale(1.2);}
+    }
+
+    /* main glass card - dark theme */
+    .card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 540px;
+      background: rgba(12, 18, 34, 0.75);
+      backdrop-filter: blur(18px);
+      border-radius: 2.5rem;
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(59,130,246,0.1) inset;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: cardGlowIn 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+
+    @keyframes cardGlowIn {
+      0% { opacity: 0; transform: translateY(30px) scale(0.96); filter: blur(2px);}
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0);}
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 35px 55px -15px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(59,130,246,0.3) inset;
+    }
+
+    .card-inner {
+      padding: 2.2rem 2rem 2.5rem;
+    }
+
+    /* header icon with neon pulse */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .icon-wrapper {
+      display: inline-flex;
+      background: rgba(59, 130, 246, 0.15);
+      backdrop-filter: blur(4px);
+      padding: 1rem;
+      border-radius: 4rem;
+      margin-bottom: 1rem;
+      border: 1px solid rgba(59,130,246,0.4);
+      box-shadow: 0 0 12px rgba(59,130,246,0.3);
+      transition: all 0.3s;
+    }
+
+    .envelope-icon svg {
+      width: 52px;
+      height: 52px;
+      filter: drop-shadow(0 0 6px #3b82f6);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #e0e7ff, #a5f3fc);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .sub {
+      color: #94a3b8;
+      font-weight: 500;
+      margin-top: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    /* input group with dark theme */
+    .input-group {
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    .input-group input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1.5px solid #334155;
+      border-radius: 2rem;
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: #f1f5f9;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    .input-group input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.2), 0 0 12px rgba(59,130,246,0.3);
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .input-group label {
+      position: absolute;
+      left: 1.5rem;
+      top: 1rem;
+      font-weight: 600;
+      color: #94a3b8;
+      pointer-events: none;
+      transition: 0.2s ease;
+      background: transparent;
+      padding: 0 0.2rem;
+    }
+
+    .input-group input:focus ~ label,
+    .input-group input:not(:placeholder-shown) ~ label {
+      top: -0.7rem;
+      left: 1.2rem;
+      font-size: 0.7rem;
+      background: rgba(12, 18, 34, 0.95);
+      padding: 0 0.5rem;
+      color: #60a5fa;
+      font-weight: 600;
+      border-radius: 20px;
+    }
+
+    /* button dark neon */
+    .btn-send {
+      width: 100%;
+      background: linear-gradient(95deg, #2563eb, #1e40af);
+      border: none;
+      border-radius: 3rem;
+      padding: 1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 20px -6px #1e3a8a;
+    }
+
+    .btn-send:hover:not(:disabled) {
+      background: linear-gradient(95deg, #3b82f6, #2563eb);
+      transform: scale(1.01);
+      box-shadow: 0 8px 18px -4px #3b82f6;
+    }
+
+    .btn-send:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-send:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0);
+      animation: rippleAnim 0.5s linear;
+      pointer-events: none;
+    }
+
+    @keyframes rippleAnim {
+      to { transform: scale(5); opacity: 0; }
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top: 2.5px solid white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .check-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #10b981;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      animation: popMark 0.4s cubic-bezier(0.34, 1.3, 0.64, 1);
+    }
+
+    @keyframes popMark {
+      0% { transform: scale(0); opacity: 0; }
+      80% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* toast dark theme */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: #111827dd;
+      backdrop-filter: blur(16px);
+      border-radius: 60px;
+      padding: 0.75rem 1.6rem;
+      color: #e2e8f0;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      border-left: 4px solid;
+      box-shadow: 0 12px 20px -8px black;
+      animation: slideUp 0.3s ease forwards;
+      pointer-events: auto;
+    }
+
+    .toast-success { border-left-color: #10b981; background: #0f2a22cc; }
+    .toast-error { border-left-color: #ef4444; background: #2c1717cc; }
+
+    @keyframes slideUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .toast.fade-out {
+      animation: fadeOut 0.2s forwards;
+    }
+
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateY(15px); visibility: hidden; }
+    }
+
+    /* error shake */
+    .shake {
+      animation: shakeAnim 0.4s ease-in-out 0s 2;
+    }
+
+    @keyframes shakeAnim {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .footer-note {
+      margin-top: 2.5rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #5b6e8c;
+      font-weight: 500;
+    }
+
+    @media (max-width: 500px) {
+      .card-inner { padding: 1.8rem; }
+      h1 { font-size: 1.7rem; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>Send Email</h2>
+<!-- star field background -->
+<div class="star-field" id="starField"></div>
 
-  <% if (message) { %>
-    <p><%= message %></p>
-  <% } %>
+<div class="card">
+  <div class="card-inner">
+    <div class="header">
+      <div class="icon-wrapper" id="headerIcon">
+        <div class="envelope-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2" ry="2" fill="rgba(255,255,255,0.15)"></rect>
+            <polyline points="22,7 12,13 2,7" stroke="white" fill="none"></polyline>
+            <path d="M6 12L2 16" stroke="white"></path>
+            <path d="M18 12L22 16" stroke="white"></path>
+          </svg>
+        </div>
+      </div>
+      <h1>Email Sender</h1>
+      <div class="sub">Delivering thoughts at lightning speed.</div>
+    </div>
 
-  <form action="/send" method="POST">
-    <input type="email" name="email" placeholder="Receiver Email" required />
-    <button type="submit">Send Email</button>
-  </form>
+    <form id="emailForm">
+      <div class="input-group">
+        <input type="email" id="receiverEmail" name="email" placeholder=" " required autocomplete="off">
+        <label for="receiverEmail">Malik Email</label>
+      </div>
+
+      <button type="submit" class="btn-send" id="sendBtn">
+        <span class="btn-text">Send email</span>
+        <span class="btn-icon">✈️</span>
+      </button>
+    </form>
+
+    <div class="footer-note">
+      ✦ Developed by: Shivang Yadav • Contact me: linkedin.com/in/yshivang27✦
+    </div>
+  </div>
 </div>
 
+<div class="toast-container" id="toastRoot"></div>
+
+<script>
+  (function() {
+    // create stars background
+    const starField = document.getElementById('starField');
+    for (let i = 0; i < 180; i++) {
+      const star = document.createElement('div');
+      star.classList.add('star');
+      const size = 1 + Math.random() * 3;
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.left = `${Math.random() * 100}%`;
+      star.style.top = `${Math.random() * 100}%`;
+      star.style.animationDelay = `${Math.random() * 5}s`;
+      star.style.animationDuration = `${2 + Math.random() * 4}s`;
+      star.style.opacity = 0.3 + Math.random() * 0.6;
+      starField.appendChild(star);
+    }
+
+    const form = document.getElementById('emailForm');
+    const emailInput = document.getElementById('receiverEmail');
+    const sendBtn = document.getElementById('sendBtn');
+    const btnTextSpan = document.querySelector('.btn-text');
+    const btnIconSpan = document.querySelector('.btn-icon');
+    let isLoading = false;
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastRoot');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      const icon = type === 'success' ? '🚀' : '🌙';
+      toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 250);
+      }, 3200);
+    }
+
+    function addRipple(e, btn) {
+      const ripple = document.createElement('span');
+      ripple.classList.add('ripple');
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const x = e.clientX - rect.left - size/2;
+      const y = e.clientY - rect.top - size/2;
+      ripple.style.width = ripple.style.height = `${size}px`;
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      btn.style.position = 'relative';
+      btn.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 500);
+    }
+
+    function burstConfetti() {
+      canvasConfetti({ particleCount: 130, spread: 80, origin: { y: 0.6 }, startVelocity: 22, colors: ['#3b82f6', '#10b981', '#c084fc', '#ffffff'] });
+      canvasConfetti({ particleCount: 50, spread: 110, origin: { y: 0.5, x: 0.2 }, startVelocity: 14 });
+      canvasConfetti({ particleCount: 50, spread: 110, origin: { y: 0.5, x: 0.8 }, startVelocity: 14 });
+    }
+
+    function animateHeaderIcon() {
+      const iconWrap = document.getElementById('headerIcon');
+      iconWrap.style.transform = 'scale(0.95)';
+      setTimeout(() => iconWrap.style.transform = '', 250);
+    }
+
+    function shakeInput() {
+      emailInput.classList.add('shake');
+      emailInput.style.borderColor = '#ef4444';
+      setTimeout(() => {
+        emailInput.classList.remove('shake');
+        emailInput.style.borderColor = '';
+      }, 500);
+    }
+
+    function resetButton() {
+      isLoading = false;
+      sendBtn.disabled = false;
+      btnTextSpan.innerText = 'Launch email';
+      btnIconSpan.innerHTML = '✈️';
+    }
+
+    function setLoading() {
+      isLoading = true;
+      sendBtn.disabled = true;
+      btnTextSpan.innerText = 'Sending';
+      btnIconSpan.innerHTML = '<span class="spinner"></span>';
+    }
+
+    async function sendEmailRequest(email) {
+      const formData = new URLSearchParams();
+      formData.append('email', email);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 9000);
+      try {
+        const res = await fetch('/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString(),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          let msg = 'Email sent successfully ✨';
+          const text = await res.text();
+          if (text && text.includes('message') && text.length < 300) {
+            const match = text.match(/(?<=>)[^<>]*(?=<\/p>)/);
+            if (match && match[0]) msg = match[0].trim();
+          }
+          return { success: true, message: msg };
+        } else {
+          return { success: false, message: `Server error (${res.status})` };
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') return { success: false, message: 'Timeout, please retry' };
+        return { success: false, message: 'Network issue, check connection' };
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (isLoading) return;
+
+      let email = emailInput.value.trim();
+      if (!email) {
+        showToast('Email address required', 'error');
+        shakeInput();
+        emailInput.focus();
+        return;
+      }
+      const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showToast('Invalid email format', 'error');
+        shakeInput();
+        emailInput.focus();
+        return;
+      }
+
+      animateHeaderIcon();
+      setLoading();
+
+      const result = await sendEmailRequest(email);
+      
+      if (result.success) {
+        showToast(result.message, 'success');
+        burstConfetti();
+        
+        emailInput.style.borderColor = '#10b981';
+        setTimeout(() => emailInput.style.borderColor = '', 1000);
+        
+        btnTextSpan.innerText = 'Sent!';
+        btnIconSpan.innerHTML = '<span class="check-mark">✓</span>';
+        
+        emailInput.style.opacity = '0.6';
+        emailInput.value = '';
+        setTimeout(() => emailInput.style.opacity = '1', 200);
+        
+        setTimeout(() => {
+          resetButton();
+          btnIconSpan.innerHTML = '✈️';
+        }, 1200);
+      } else {
+        showToast(result.message, 'error');
+        shakeInput();
+        resetButton();
+        btnIconSpan.innerHTML = '✈️';
+        emailInput.focus();
+      }
+    });
+
+    sendBtn.addEventListener('click', (e) => {
+      if (!sendBtn.disabled) addRipple(e, sendBtn);
+    });
+
+  })();
+</script>
 </body>
 </html>
